@@ -1,0 +1,375 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>DSIG Model Playground</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky chapter rail of chips on top, one lab bench per view: controls left of / above the drawing, readouts beside, takeaway below. */
+:root{
+  --bg:#f4f6f8; --panel:#ffffff; --ink:#18222d; --muted:#5b6876; --line:#d5dbe2;
+  --accent:#3347b8; --accent-ink:#ffffff;
+  --c0:#2b7fb5; --c1:#d9861a; --good:#2e8b57; --bad:#c23b4a; --soft:#e8ecf1;
+  --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#11161c; --panel:#1a212a; --ink:#e6ebf0; --muted:#98a4b1; --line:#2f3945;
+  --accent:#8c9cf5; --accent-ink:#0f1420;
+  --c0:#5fb0e0; --c1:#f0a843; --good:#5cc48a; --bad:#f07885; --soft:#232c37; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#11161c; --panel:#1a212a; --ink:#e6ebf0; --muted:#98a4b1; --line:#2f3945;
+  --accent:#8c9cf5; --accent-ink:#0f1420;
+  --c0:#5fb0e0; --c1:#f0a843; --good:#5cc48a; --bad:#f07885; --soft:#232c37; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+header.top{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+header.top h1{font-family:var(--display);font-size:26px;font-weight:600;margin:0;letter-spacing:-.01em}
+header.top p{margin:0;color:var(--muted);max-width:65ch}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;border-bottom:1px solid var(--line);margin-bottom:22px;display:flex;gap:6px;overflow-x:auto}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav a{flex:none;text-decoration:none;color:var(--muted);font-size:13px;font-weight:500;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--panel);white-space:nowrap}
+nav a .n{font-family:var(--mono);font-size:11px;margin-right:5px;opacity:.8}
+nav a[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+nav a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.view h2{font-family:var(--display);font-size:22px;font-weight:600;margin:0 0 2px;text-wrap:balance}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:68ch;margin:4px 0 16px}
+.bench{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.bench{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.stage svg,.stage canvas{display:block;width:100%;height:auto}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ctrl{display:flex;flex-direction:column;gap:10px}
+.ctrl label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:500}
+.ctrl label span.v{font-family:var(--mono);font-weight:500;color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.chk{flex-direction:row!important;align-items:center;gap:8px!important}
+.chk input{accent-color:var(--accent)}
+button{font:500 13px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:7px 11px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.stats div{background:var(--panel);padding:8px 10px}
+.stats dt{font-size:11.5px;color:var(--muted)}
+.stats dd{margin:0;font-family:var(--mono);font-size:17px;font-variant-numeric:tabular-nums}
+.cm{display:grid;grid-template-columns:auto 1fr 1fr;gap:4px;font-size:12px;align-items:center}
+.cm .h{color:var(--muted);text-align:center;font-size:11.5px}
+.cm .cell{border-radius:6px;padding:8px 6px;text-align:center;background:var(--soft)}
+.cm .cell b{display:block;font-family:var(--mono);font-size:19px;font-weight:500}
+.cm .ok{box-shadow:inset 0 0 0 1.5px var(--good)} .cm .no{box-shadow:inset 0 0 0 1.5px var(--bad)}
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 12px;margin:16px 0 0;max-width:70ch}
+.note b{font-family:var(--display)}
+.say{font-size:13.5px;color:var(--muted);min-height:2.6em;margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+svg text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+svg .ax{stroke:var(--line);stroke-width:1;fill:none}
+svg .t-ink{fill:var(--ink)}
+.heat{display:grid;gap:3px}
+.heat button{padding:0;aspect-ratio:1.25;font-family:var(--mono);font-size:11px;border-radius:4px;min-width:0}
+.heat .lab{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.heat button.best{box-shadow:0 0 0 2px var(--good)}
+.scroll{overflow-x:auto}
+.back{font-size:13px;color:var(--muted);margin-top:26px}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <span class="eyebrow">Wits Data Science Interest Group</span>
+  <h1>Model Playground</h1>
+  <p>Eight small experiments that go with the manual. Move a slider, watch what changes, then read the chapter. Demos 4 to 8 use real results from the breast cancer dataset used in the book (569 tumours, 114 held out for testing).</p>
+</header>
+<nav id="nav" aria-label="Demos"></nav>
+
+<section class="view" id="v-outliers" hidden>
+  <span class="eyebrow">Goes with: Data Preprocessing and Cleaning</span>
+  <h2>How strict should the outlier rule be?</h2>
+  <p class="lede">Thirty monthly salaries in thousands of rand. The IQR rule flags anything further than <em>k</em> × IQR from the middle half of the data.</p>
+  <div class="bench"><div class="stage"><svg id="o-svg" viewBox="0 0 640 250" role="img" aria-label="Salary strip plot with outlier bounds"></svg>
+    <div class="legend"><span><i style="background:var(--c0)"></i>kept</span><span><i style="background:var(--bad)"></i>flagged as outlier</span></div></div>
+  <div class="side"><div class="ctrl">
+    <label>IQR multiplier k <span class="v" id="o-kv"></span><input id="o-k" type="range" min="0.5" max="3" step="0.1" value="1.5"></label>
+    <label class="chk"><input id="o-cap" type="checkbox"> Cap flagged values at the bounds</label></div>
+    <dl class="stats"><div><dt>Flagged</dt><dd id="o-n"></dd></div><div><dt>Median</dt><dd id="o-med"></dd></div><div><dt>Mean before</dt><dd id="o-m0"></dd></div><div><dt>Mean after capping</dt><dd id="o-m1"></dd></div></dl></div></div>
+  <p class="note"><b>Notice.</b> The median barely moves, but the mean is dragged by a few large salaries. A small k flags ordinary high earners too. k = 1.5 is a convention, so check flagged rows against what you know about the data before capping.</p>
+</section>
+
+<section class="view" id="v-correlation" hidden>
+  <span class="eyebrow">Goes with: Data Analysis and Exploration</span>
+  <h2>What does a correlation of 0.6 look like?</h2>
+  <p class="lede">Eighty points drawn with the correlation you choose. Then add one extreme point and see what it does to the number.</p>
+  <div class="bench"><div class="stage"><svg id="c-svg" viewBox="0 0 640 400" role="img" aria-label="Scatter plot"></svg></div>
+  <div class="side"><div class="ctrl">
+    <label>Target correlation <span class="v" id="c-rv"></span><input id="c-r" type="range" min="-1" max="1" step="0.05" value="0.6"></label>
+    <label class="chk"><input id="c-out" type="checkbox"> Add one extreme point</label></div>
+    <dl class="stats"><div><dt>Measured r</dt><dd id="c-meas"></dd></div><div><dt>Points</dt><dd id="c-n"></dd></div></dl></div></div>
+  <p class="note"><b>Notice.</b> Even r = 0.6 is a loose cloud. One extreme point can shift r a lot, which is why you plot the data before trusting the heatmap. None of this says which variable causes the other.</p>
+</section>
+
+<section class="view" id="v-transform" hidden>
+  <span class="eyebrow">Goes with: Feature Engineering</span>
+  <h2>What does a log transform do to a skewed feature?</h2>
+  <p class="lede">300 simulated incomes with a long right tail. Switch the transform and watch the histogram and the skewness.</p>
+  <div class="bench"><div class="stage"><svg id="t-svg" viewBox="0 0 640 320" role="img" aria-label="Histogram"></svg></div>
+  <div class="side"><div class="row" id="t-btns"><button data-t="raw" aria-pressed="true">Raw</button><button data-t="sqrt">Square root</button><button data-t="log">log1p</button></div>
+    <dl class="stats"><div><dt>Skewness</dt><dd id="t-skew"></dd></div><div><dt>Mean / median</dt><dd id="t-mm"></dd></div></dl>
+    <p class="say" id="t-say"></p></div></div>
+  <p class="note"><b>Notice.</b> Skewness near 0 means a roughly symmetric shape. The square root helps a little, log1p helps most for this kind of tail. Linear models and distance-based models usually behave better on the transformed version.</p>
+</section>
+
+<section class="view" id="v-overfitting" hidden>
+  <span class="eyebrow">Goes with: Building Models</span>
+  <h2>Underfitting and overfitting, with one slider</h2>
+  <p class="lede">A k-nearest-neighbours model on two noisy classes. The background colour is what the model would predict at that spot. k is how many neighbours get a vote.</p>
+  <div class="bench"><div class="stage"><canvas id="k-cv" width="640" height="440" role="img" aria-label="Decision boundary"></canvas>
+    <div class="legend"><span><i style="background:var(--c0)"></i>class A</span><span><i style="background:var(--c1)"></i>class B</span><span>filled = training, ring = test</span></div></div>
+  <div class="side"><div class="ctrl">
+    <label>Neighbours k <span class="v" id="k-kv"></span><input id="k-k" type="range" min="0" max="24" step="1" value="0"></label>
+    <label class="chk"><input id="k-test" type="checkbox"> Show test points</label></div>
+    <dl class="stats"><div><dt>Train accuracy</dt><dd id="k-tr"></dd></div><div><dt>Test accuracy</dt><dd id="k-te"></dd></div></dl>
+    <div class="stage" style="padding:8px"><svg id="k-curve" viewBox="0 0 300 150" role="img" aria-label="Accuracy against k"></svg></div>
+    <p class="say" id="k-say"></p></div></div>
+  <p class="note"><b>Notice.</b> At k = 1 the model memorises every training point: 100% on training data, worse on test data. That is overfitting. At a very large k the boundary is too smooth and both scores drop. That is underfitting. The best k sits in between, and you only find it by scoring on data the model has not seen.</p>
+</section>
+
+<section class="view" id="v-threshold" hidden>
+  <span class="eyebrow">Goes with: Model Selection and Evaluation</span>
+  <h2>Move the threshold, change the mistakes</h2>
+  <p class="lede">Each dot is one of the 114 test tumours, placed at the probability our logistic regression gave it of being malignant. Anything right of the line is predicted malignant.</p>
+  <div class="bench"><div class="stage"><svg id="h-svg" viewBox="0 0 640 300" role="img" aria-label="Predicted probabilities by true class"></svg></div>
+  <div class="side"><div class="ctrl"><label>Decision threshold <span class="v" id="h-tv"></span><input id="h-t" type="range" min="0.02" max="0.98" step="0.01" value="0.5"></label></div>
+    <div class="cm" id="h-cm"></div>
+    <dl class="stats"><div><dt>Precision</dt><dd id="h-p"></dd></div><div><dt>Recall</dt><dd id="h-r"></dd></div><div><dt>F1</dt><dd id="h-f"></dd></div><div><dt>Accuracy</dt><dd id="h-a"></dd></div></dl></div></div>
+  <p class="note"><b>Notice.</b> Slide left and recall rises, because fewer cancers are missed, but more healthy patients get a false alarm, so precision falls. Slide right and the reverse happens. Accuracy hardly shows this trade. Which mistake is worse is a decision about the problem, and the threshold is where you make it.</p>
+</section>
+
+<section class="view" id="v-tuning" hidden>
+  <span class="eyebrow">Goes with: Hyperparameter Tuning</span>
+  <h2>Search for the best settings on a budget</h2>
+  <p class="lede">64 possible settings of a decision tree. Each hidden cell holds its real 5-fold cross-validated F1. Click cells to try settings yourself, or let a search strategy spend 9 tries.</p>
+  <div class="bench"><div class="stage"><div class="scroll"><div class="heat" id="g-heat"></div></div>
+    <div class="legend"><span>rows: max_depth</span><span>columns: min_samples_leaf</span><span>darker = higher F1</span></div></div>
+  <div class="side"><div class="row"><button id="g-grid">Grid search, 9 tries</button><button id="g-rand">Random search, 9 tries</button><button id="g-all">Reveal all</button><button id="g-reset">Reset</button></div>
+    <dl class="stats"><div><dt>Tries used</dt><dd id="g-n"></dd></div><div><dt>Best found</dt><dd id="g-best"></dd></div></dl>
+    <p class="say" id="g-say"></p></div></div>
+  <p class="note"><b>Notice.</b> Most of the grid is nearly flat: scores differ in the second decimal. Grid search only sees the values you thought to list. Random search samples everywhere, so with the same budget it often lands close to the best. Press random search a few times, since each run is different.</p>
+</section>
+
+<section class="view" id="v-importance" hidden>
+  <span class="eyebrow">Goes with: Feature Importance</span>
+  <h2>Two ways to ask which features matter</h2>
+  <p class="lede">The ten highest-ranked features of our random forest, scored two ways. Click a bar to see what shuffling that column does to the test F1 of 0.950.</p>
+  <div class="bench"><div class="stage"><svg id="i-svg" viewBox="0 0 640 330" role="img" aria-label="Feature importance bars"></svg></div>
+  <div class="side"><div class="row" id="i-btns"><button data-m="gini" aria-pressed="true">Built-in</button><button data-m="perm">Permutation</button></div>
+    <p class="say" id="i-say">Click a bar.</p></div></div>
+  <p class="note"><b>Notice.</b> Built-in importance ranks worst radius and mean radius highly, yet shuffling them changes nothing. Radius, perimeter and area measure the same thing (correlation 0.99), so when one is scrambled the forest reads the others. Importance tells you what this model leans on. It does not tell you what causes cancer.</p>
+</section>
+
+<section class="view" id="v-lime" hidden>
+  <span class="eyebrow">Goes with: Model Explainability with LIME</span>
+  <h2>How LIME explains one prediction</h2>
+  <p class="lede">The coloured background is a black-box model with a curved boundary. Click anywhere to choose the case to explain. LIME scatters fake neighbours around it, asks the black box about each one, and fits a straight line that only has to be right nearby.</p>
+  <div class="bench"><div class="stage"><canvas id="l-cv" width="640" height="440" role="img" aria-label="Local linear explanation of a curved model"></canvas>
+    <div class="legend"><span>large dots = close neighbours, count more</span><span>dashed line = LIME's local model</span></div></div>
+  <div class="side"><div class="ctrl"><label>Neighbourhood width <span class="v" id="l-wv"></span><input id="l-w" type="range" min="0.05" max="0.6" step="0.01" value="0.15"></label></div>
+    <div class="stage" style="padding:8px"><svg id="l-bars" viewBox="0 0 300 96" role="img" aria-label="Local feature weights"></svg></div>
+    <p class="say" id="l-say"></p></div></div>
+  <p class="note"><b>Notice.</b> Move the case along the boundary and the explanation changes, because the curve points a different way there. Widen the neighbourhood and the dashed line stops matching the curve near your case. A LIME explanation is local: it describes one prediction, never the whole model.</p>
+
+  <h2 style="margin-top:30px">Three real explanations</h2>
+  <p class="lede">LIME output for three test patients from the random forest in the book. Bars to the right push towards malignant, bars to the left push towards benign.</p>
+  <div class="bench"><div class="stage"><svg id="r-svg" viewBox="0 0 640 260" role="img" aria-label="LIME weights for one patient"></svg></div>
+  <div class="side"><div class="row" id="r-btns"></div><dl class="stats"><div><dt>Model says P(malignant)</dt><dd id="r-p"></dd></div><div><dt>Truth</dt><dd id="r-t"></dd></div></dl><p class="say" id="r-say"></p></div></div>
+</section>
+
+<p class="back">Each demo matches a chapter of the Data Science Interest Group manual.</p>
+</div>
+
+<script>
+const D={"proba":[0.0,1.0,0.043,0.576,0.509,0.001,0.762,0.001,0.001,0.011,0.931,0.0,1.0,0.004,0.008,0.0,0.061,0.0,0.222,0.0,0.001,0.004,1.0,0.998,0.758,0.0,0.0,0.969,0.997,1.0,1.0,0.002,1.0,1.0,0.0,0.014,0.002,0.0,0.991,0.093,0.0,0.0,0.852,0.003,0.011,0.954,0.076,0.999,0.0,0.001,1.0,0.998,0.007,0.001,0.0,0.988,0.052,0.0,0.0,1.0,0.015,0.073,0.902,0.0,0.015,0.004,1.0,1.0,0.014,0.883,0.0,1.0,1.0,0.0,0.0,0.033,0.0,0.995,0.01,0.974,0.989,1.0,0.0,0.002,0.0,0.235,1.0,0.315,1.0,0.0,1.0,0.0,0.094,0.002,0.011,0.002,0.067,0.885,0.0,0.0,0.0,0.001,0.024,0.01,0.002,0.002,1.0,0.201,1.0,0.0,0.0,0.116,0.492,0.999],
+"ytest":[0,1,0,1,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,1,1,1,0,0,1,1,1,1,0,1,1,0,0,0,0,1,0,0,0,1,0,0,1,0,1,0,0,1,1,0,0,0,1,0,0,0,1,0,0,1,0,0,0,1,1,0,1,0,1,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,1,1,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,1],
+"surf":{"depths":[1,2,3,4,5,6,8,10],"leaves":[1,2,3,5,8,12,20,30],"score":[[0.856,0.856,0.856,0.856,0.856,0.856,0.856,0.856],[0.889,0.889,0.893,0.903,0.901,0.899,0.888,0.865],[0.888,0.887,0.898,0.902,0.899,0.899,0.888,0.865],[0.89,0.895,0.9,0.898,0.896,0.899,0.888,0.865],[0.872,0.889,0.896,0.898,0.899,0.899,0.888,0.865],[0.892,0.907,0.913,0.898,0.899,0.899,0.888,0.865],[0.896,0.902,0.913,0.898,0.899,0.899,0.888,0.865],[0.896,0.902,0.913,0.898,0.899,0.899,0.888,0.865]]},
+"imp":[{"f":"worst perimeter","gini":0.148,"perm":0.007},{"f":"worst area","gini":0.132,"perm":0.015},{"f":"worst concave points","gini":0.11,"perm":0.019},{"f":"mean concave points","gini":0.088,"perm":0.013},{"f":"worst radius","gini":0.085,"perm":-0.001},{"f":"mean radius","gini":0.061,"perm":-0.002},{"f":"mean perimeter","gini":0.06,"perm":-0.001},{"f":"mean area","gini":0.045,"perm":-0.001},{"f":"mean concavity","gini":0.044,"perm":0.001},{"f":"worst concavity","gini":0.033,"perm":0.012}],"basef1":0.95,
+"lime":[
+ {"name":"Patient A","p":1.0,"truth":"malignant","say":"Every listed feature is in its highest range and pushes the same way. The model is confident and correct.","w":[["worst area > 1122.50",0.123],["worst concave points > 0.16",0.119],["worst perimeter > 127.00",0.105],["worst radius > 19.19",0.093],["mean concave points > 0.07",0.068],["area error > 45.39",0.061]]},
+ {"name":"Patient B","p":0.015,"truth":"benign","say":"A small, smooth tumour. Every feature pulls towards benign. Confident and correct.","w":[["worst area <= 516.15",-0.080],["worst radius <= 13.02",-0.064],["worst perimeter <= 84.13",-0.063],["0.06 < worst concave points <= 0.10",-0.051],["mean texture <= 16.34",-0.049],["worst texture <= 21.49",-0.043]]},
+ {"name":"Patient C","p":0.145,"truth":"malignant","say":"The model got this one wrong. Low texture values pulled it towards benign and the size features were only mid-range, so the pushes are small and mixed. LIME's local fit was also poor here (R² 0.05), so treat this explanation with caution.","w":[["mean texture <= 16.34",-0.045],["worst texture <= 21.49",-0.043],["17.86 < area error <= 24.87",-0.023],["683.40 < worst area <= 1122.50",0.018],["546.40 < mean area <= 795.50",-0.017],["14.92 < worst radius <= 19.19",0.015]]}]};
+
+const $=id=>document.getElementById(id);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){return()=>{let u=0,v=0;while(!u)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}}
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const quant=(s,q)=>{const p=(s.length-1)*q,i=Math.floor(p);return s[i]+(s[Math.min(i+1,s.length-1)]-s[i])*(p-i)};
+const fmt=(x,d=2)=>x.toFixed(d);
+
+/* ---------- views / hash routing ---------- */
+const VIEWS=[["outliers","Outliers"],["correlation","Correlation"],["transform","Transforms"],["overfitting","Overfitting"],["threshold","Threshold"],["tuning","Tuning"],["importance","Importance"],["lime","LIME"]];
+$("nav").innerHTML=VIEWS.map(([k,l],i)=>`<a href="#${k}" data-k="${k}"><span class="n">${i+1}</span>${l}</a>`).join("");
+const drawers={};
+function route(){let k=location.hash.replace("#","");if(!VIEWS.some(v=>v[0]===k))k="overfitting";
+  VIEWS.forEach(([v])=>{$("v-"+v).hidden=v!==k});
+  document.querySelectorAll("nav a").forEach(a=>{const on=a.dataset.k===k;a.setAttribute("aria-current",on);if(on&&a.scrollIntoView)a.scrollIntoView({block:"nearest",inline:"nearest"})});
+  if(drawers[k])drawers[k]();}
+addEventListener("hashchange",route);
+
+/* ---------- 1 outliers ---------- */
+const SAL=[14,16,17,18,19,19,20,21,21,22,23,23,24,25,25,26,27,28,29,30,31,33,35,38,41,46,58,74,95,140];
+const OJ=(()=>{const r=rng(5);return SAL.map(()=>r())})();
+drawers.outliers=function(){const k=+$("o-k").value,cap=$("o-cap").checked,s=[...SAL].sort((a,b)=>a-b);
+  const q1=quant(s,.25),q3=quant(s,.75),iqr=q3-q1,lo=q1-k*iqr,hi=q3+k*iqr;
+  const W=640,x=v=>40+(v/150)*(W-60);let h="";
+  h+=`<rect x="${x(Math.max(0,lo))}" y="50" width="${x(Math.min(150,hi))-x(Math.max(0,lo))}" height="140" fill="var(--soft)"/>`;
+  h+=`<rect x="${x(q1)}" y="100" width="${x(q3)-x(q1)}" height="40" fill="none" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+  h+=`<text x="${(x(q1)+x(q3))/2}" y="94" text-anchor="middle">middle 50%</text>`;
+  if(hi<150)h+=`<line x1="${x(hi)}" x2="${x(hi)}" y1="40" y2="196" stroke="var(--bad)" stroke-width="1.5"/><text x="${x(hi)+5}" y="46" class="t-ink">upper bound ${fmt(hi,1)}</text>`;
+  let n=0;const after=[];
+  SAL.forEach((v,i)=>{const out=v<lo||v>hi;if(out)n++;const vv=out&&cap?Math.min(Math.max(v,lo),hi):v;after.push(vv);
+    h+=`<circle cx="${x(vv)}" cy="${150+ (OJ[i]-.5)*60}" r="5.5" fill="${out?"var(--bad)":"var(--c0)"}" fill-opacity=".85"/>`});
+  h+=`<line class="ax" x1="40" x2="${W-20}" y1="210" y2="210"/>`;
+  for(let t=0;t<=150;t+=25)h+=`<text x="${x(t)}" y="228" text-anchor="middle">${t}</text>`;
+  h+=`<text x="${W/2}" y="246" text-anchor="middle">monthly salary (R thousands)</text>`;
+  $("o-svg").innerHTML=h;$("o-kv").textContent=fmt(k,1);$("o-n").textContent=n+" of 30";
+  $("o-med").textContent=fmt(quant(s,.5),1);$("o-m0").textContent=fmt(mean(SAL),1);$("o-m1").textContent=fmt(mean(SAL.map(v=>Math.min(Math.max(v,lo),hi))),1)};
+$("o-k").oninput=$("o-cap").onchange=()=>drawers.outliers();
+
+/* ---------- 2 correlation ---------- */
+const CZ=(()=>{const g=gauss(rng(11));const a=[];for(let i=0;i<80;i++)a.push([g(),g()]);
+  const m0=mean(a.map(p=>p[0])),m1=mean(a.map(p=>p[1]));a.forEach(p=>{p[0]-=m0;p[1]-=m1});return a})();
+function pearson(p){const mx=mean(p.map(q=>q[0])),my=mean(p.map(q=>q[1]));let a=0,b=0,c=0;p.forEach(([x,y])=>{a+=(x-mx)*(y-my);b+=(x-mx)**2;c+=(y-my)**2});return a/Math.sqrt(b*c)}
+drawers.correlation=function(){const r=+$("c-r").value,out=$("c-out").checked;
+  let pts=CZ.map(([a,b])=>[a,r*a+Math.sqrt(1-r*r)*b]);if(out)pts=pts.concat([[3.6,-3.6*(r>=0?1:-1)]]);
+  const X=v=>320+v*70,Y=v=>200-v*45;let h=`<line class="ax" x1="30" x2="610" y1="200" y2="200"/><line class="ax" x1="320" x2="320" y1="15" y2="385"/>`;
+  pts.forEach((p,i)=>{const o=out&&i===pts.length-1;h+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="${o?7:4.5}" fill="${o?"var(--bad)":"var(--c0)"}" fill-opacity=".8"/>`});
+  h+=`<text x="606" y="216" text-anchor="end">feature x</text><text x="328" y="24">feature y</text>`;
+  $("c-svg").innerHTML=h;$("c-rv").textContent=fmt(r);$("c-meas").textContent=fmt(pearson(pts));$("c-n").textContent=pts.length};
+$("c-r").oninput=$("c-out").onchange=()=>drawers.correlation();
+
+/* ---------- 3 transform ---------- */
+const INC=(()=>{const g=gauss(rng(3));const a=[];for(let i=0;i<300;i++)a.push(Math.exp(9.9+0.75*g()));return a})();
+let tMode="raw";
+function skew(a){const m=mean(a),s=Math.sqrt(mean(a.map(x=>(x-m)**2)));return mean(a.map(x=>((x-m)/s)**3))}
+drawers.transform=function(){const f={raw:x=>x,sqrt:Math.sqrt,log:Math.log1p}[tMode];const a=INC.map(f),lo=Math.min(...a),hi=Math.max(...a),B=26,c=Array(B).fill(0);
+  a.forEach(v=>c[Math.min(B-1,Math.floor((v-lo)/(hi-lo)*B))]++);const mx=Math.max(...c),bw=560/B;let h="";
+  c.forEach((n,i)=>{const bh=n/mx*240;h+=`<rect x="${50+i*bw+1}" y="${270-bh}" width="${bw-2}" height="${bh}" fill="var(--c0)" fill-opacity=".85"/>`});
+  h+=`<line class="ax" x1="50" x2="610" y1="270" y2="270"/>`;
+  const lab=v=>tMode==="raw"?"R"+Math.round(v/1000)+"k":fmt(v,1);
+  [0,.25,.5,.75,1].forEach(q=>{h+=`<text x="${50+q*560}" y="288" text-anchor="middle">${lab(lo+q*(hi-lo))}</text>`});
+  h+=`<text x="330" y="308" text-anchor="middle">${{raw:"monthly income",sqrt:"sqrt(income)",log:"log1p(income)"}[tMode]}</text>`;
+  const s=[...a].sort((p,q)=>p-q),sk=skew(a);
+  $("t-svg").innerHTML=h;$("t-skew").textContent=fmt(sk);$("t-mm").textContent=fmt(mean(a)/quant(s,.5));
+  $("t-say").textContent=Math.abs(sk)<.5?"Roughly symmetric. Mean and median nearly agree.":sk<1.2?"Still leaning right, but the tail is shorter.":"Strong right skew: a few very large values pull the mean far above the median.";
+  document.querySelectorAll("#t-btns button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t===tMode))};
+document.querySelectorAll("#t-btns button").forEach(b=>b.onclick=()=>{tMode=b.dataset.t;drawers.transform()});
+
+/* ---------- 4 overfitting (kNN) ---------- */
+const KD=(()=>{const r=rng(7),g=gauss(r);const mk=n=>{const a=[];for(let i=0;i<n;i++){const c=i%2,t=r()*Math.PI;
+  let x=c?1-Math.cos(t):Math.cos(t),y=c?.45-Math.sin(t):Math.sin(t);a.push([x+g()*.4,y+g()*.4,c])}return a};return{tr:mk(120),te:mk(200)}})();
+const KS=Array.from({length:25},(_,i)=>i<12?2*i+1:i<20?25+4*(i-12):59+10*(i-20));
+function knn(x,y,k,skip){const d=KD.tr.map((p,i)=>[i===skip?Infinity:(p[0]-x)**2+(p[1]-y)**2,p[2]]).sort((a,b)=>a[0]-b[0]);let s=0;for(let i=0;i<k;i++)s+=d[i][1];return s/k}
+const KACC=KS.map(k=>({k,tr:mean(KD.tr.map(p=>(knn(p[0],p[1],k)>.5?1:0)===p[2]?1:0)),te:mean(KD.te.map(p=>(knn(p[0],p[1],k)>.5?1:0)===p[2]?1:0))}));
+function hexA(hex,a){const n=parseInt(hex.slice(1),16);return`rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
+drawers.overfitting=function(){const i=+$("k-k").value,k=KS[i],cv=$("k-cv"),g=cv.getContext("2d"),W=cv.width,H=cv.height;
+  const c0=css("--c0"),c1=css("--c1"),X=v=>(v+1.7)/4.4*W,Y=v=>H-(v+1.5)/3*H,cs=10;
+  g.fillStyle=css("--panel");g.fillRect(0,0,W,H);
+  for(let px=0;px<W;px+=cs)for(let py=0;py<H;py+=cs){const x=(px+cs/2)/W*4.4-1.7,y=(H-py-cs/2)/H*3-1.5;g.fillStyle=hexA(knn(x,y,k)>.5?c1:c0,.28);g.fillRect(px,py,cs,cs)}
+  KD.tr.forEach(p=>{g.beginPath();g.arc(X(p[0]),Y(p[1]),5,0,7);g.fillStyle=p[2]?c1:c0;g.fill();g.lineWidth=1;g.strokeStyle=css("--panel");g.stroke()});
+  if($("k-test").checked)KD.te.forEach(p=>{g.beginPath();g.arc(X(p[0]),Y(p[1]),5,0,7);g.lineWidth=2.2;g.strokeStyle=p[2]?c1:c0;g.stroke()});
+  const a=KACC[i];$("k-kv").textContent=k;$("k-tr").textContent=fmt(a.tr*100,0)+"%";$("k-te").textContent=fmt(a.te*100,0)+"%";
+  const lo=.7,px=j=>30+j/(KS.length-1)*255,py=v=>130-(v-lo)/(1-lo)*110;let h=`<line class="ax" x1="30" x2="285" y1="130" y2="130"/>`;
+  [.7,.8,.9,1].forEach(v=>h+=`<text x="26" y="${py(v)+4}" text-anchor="end">${v*100}</text>`);
+  const path=key=>KACC.map((q,j)=>(j?"L":"M")+px(j)+" "+py(Math.max(lo,q[key]))).join("");
+  h+=`<path d="${path("tr")}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/><path d="${path("te")}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+  h+=`<line x1="${px(i)}" x2="${px(i)}" y1="16" y2="130" stroke="var(--ink)" stroke-width="1"/><circle cx="${px(i)}" cy="${py(Math.max(lo,a.te))}" r="4" fill="var(--accent)"/>`;
+  h+=`<text x="34" y="12">train (dashed) and test accuracy %</text><text x="285" y="146" text-anchor="end">k = ${KS[0]} to ${KS[KS.length-1]}</text>`;
+  $("k-curve").innerHTML=h;const best=KACC.reduce((b,q)=>q.te>b.te?q:b);
+  $("k-say").textContent=a.tr-a.te>.07?"Overfitting: a big gap between training and test accuracy.":a.te<best.te-.04&&k>30?"Underfitting: the boundary is too smooth to follow the data.":"A good balance. Test accuracy peaks at k = "+best.k+".";};
+$("k-k").oninput=$("k-test").onchange=()=>drawers.overfitting();
+
+/* ---------- 5 threshold ---------- */
+const HJ=(()=>{const r=rng(8);return D.proba.map(()=>r())})();
+drawers.threshold=function(){const t=+$("h-t").value,X=p=>60+p*550;let tp=0,fp=0,tn=0,fn=0,h="";
+  h+=`<rect x="${X(t)}" y="20" width="${X(1)-X(t)+12}" height="230" fill="var(--soft)"/>`;
+  D.proba.forEach((p,i)=>{const y=D.ytest[i],pred=p>=t?1:0;if(y&&pred)tp++;else if(!y&&pred)fp++;else if(y&&!pred)fn++;else tn++;
+    const wrong=y!==pred;h+=`<circle cx="${X(p)}" cy="${(y?80:190)+(HJ[i]-.5)*70}" r="5" fill="${y?"var(--c1)":"var(--c0)"}" fill-opacity="${wrong?1:.55}" ${wrong?'stroke="var(--bad)" stroke-width="2.2"':""}/>`});
+  h+=`<line x1="${X(t)}" x2="${X(t)}" y1="12" y2="256" stroke="var(--ink)" stroke-width="1.5"/>`;
+  h+=`<text x="12" y="38" class="t-ink">truly malignant</text><text x="12" y="150" class="t-ink">truly benign</text>`;
+  h+=`<text x="${Math.min(X(t)+6,520)}" y="268" class="t-ink">predicted malignant →</text>`;
+  h+=`<line class="ax" x1="60" x2="610" y1="256" y2="256"/>`;[0,.25,.5,.75,1].forEach(v=>h+=`<text x="${X(v)}" y="286" text-anchor="middle">${v}</text>`);
+  h+=`<text x="60" y="298">predicted probability of malignant</text>`;$("h-svg").innerHTML=h;
+  const P=tp+fp?tp/(tp+fp):0,R=tp/(tp+fn),F=P+R?2*P*R/(P+R):0;
+  $("h-tv").textContent=fmt(t);$("h-p").textContent=fmt(P);$("h-r").textContent=fmt(R);$("h-f").textContent=fmt(F);$("h-a").textContent=fmt((tp+tn)/114);
+  $("h-cm").innerHTML=`<span></span><span class="h">predicted benign</span><span class="h">predicted malignant</span>
+   <span class="h">truly benign</span><div class="cell ok"><b>${tn}</b>correct</div><div class="cell no"><b>${fp}</b>false alarm</div>
+   <span class="h">truly malignant</span><div class="cell no"><b>${fn}</b>missed cancer</div><div class="cell ok"><b>${tp}</b>caught</div>`};
+$("h-t").oninput=()=>drawers.threshold();
+
+/* ---------- 6 tuning ---------- */
+const S=D.surf,shown=new Set();let gr=rng(Date.now()%1e6);
+const SMAX=Math.max(...S.score.flat()),SMIN=Math.min(...S.score.flat());
+function tuneDraw(){const n=S.leaves.length;let best=null;shown.forEach(key=>{const[i,j]=key.split(",").map(Number);if(!best||S.score[i][j]>best.s)best={s:S.score[i][j],i,j}});
+  const el=$("g-heat");el.style.gridTemplateColumns=`34px repeat(${n},minmax(34px,1fr))`;let h=`<span class="lab"></span>`+S.leaves.map(l=>`<span class="lab">${l}</span>`).join("");
+  S.depths.forEach((d,i)=>{h+=`<span class="lab">${d}</span>`;S.leaves.forEach((l,j)=>{const on=shown.has(i+","+j),v=S.score[i][j],a=.12+.88*(v-SMIN)/(SMAX-SMIN);
+    h+=`<button data-c="${i},${j}" aria-label="max_depth ${d}, min_samples_leaf ${l}${on?", F1 "+v:""}" class="${best&&best.i===i&&best.j===j?"best":""}" style="${on?`background:color-mix(in srgb,var(--accent) ${Math.round(a*100)}%,var(--panel));color:${a>.55?"var(--accent-ink)":"var(--ink)"}`:""}">${on?v.toFixed(3).slice(1):"?"}</button>`})});
+  el.innerHTML=h;el.querySelectorAll("button").forEach(b=>b.onclick=()=>{shown.add(b.dataset.c);tuneDraw()});
+  $("g-n").textContent=shown.size+" of 64";$("g-best").textContent=best?best.s.toFixed(3):"none yet";
+  $("g-say").textContent=best?`Best so far: max_depth ${S.depths[best.i]}, min_samples_leaf ${S.leaves[best.j]}. The true best of all 64 is ${SMAX.toFixed(3)}.`:"Nothing tried yet. Each try costs five model fits, one per fold.";}
+drawers.tuning=tuneDraw;
+$("g-grid").onclick=()=>{shown.clear();[0,3,7].forEach(i=>[0,3,7].forEach(j=>shown.add(i+","+j)));tuneDraw()};
+$("g-rand").onclick=()=>{shown.clear();while(shown.size<9)shown.add(Math.floor(gr()*8)+","+Math.floor(gr()*8));tuneDraw()};
+$("g-all").onclick=()=>{S.depths.forEach((_,i)=>S.leaves.forEach((_,j)=>shown.add(i+","+j)));tuneDraw()};
+$("g-reset").onclick=()=>{shown.clear();tuneDraw()};
+
+/* ---------- 7 importance ---------- */
+let iMode="gini",iSel=-1;
+drawers.importance=function(){const mx=iMode==="gini"?.16:.022,x0=210,X=v=>x0+Math.max(v,0)/mx*400;let h="";
+  D.imp.forEach((d,i)=>{const y=14+i*29,v=d[iMode];
+    h+=`<g data-i="${i}" style="cursor:pointer"><rect x="0" y="${y-4}" width="640" height="27" fill="${i===iSel?"var(--soft)":"transparent"}"/><text x="${x0-8}" y="${y+13}" text-anchor="end" class="t-ink">${d.f}</text><rect x="${x0}" y="${y}" width="${Math.max(X(v)-x0,1.5)}" height="18" rx="2" fill="${iMode==="gini"?"var(--c0)":"var(--c1)"}"/><text x="${X(v)+6}" y="${y+13}">${v.toFixed(3)}</text></g>`});
+  h+=`<text x="${x0}" y="322">${iMode==="gini"?"share of the forest's splits (all 30 features sum to 1)":"drop in test F1 when the column is shuffled (mean of 20 shuffles)"}</text>`;
+  const el=$("i-svg");el.innerHTML=h;el.querySelectorAll("g").forEach(g=>g.onclick=()=>{iSel=+g.dataset.i;drawers.importance()});
+  document.querySelectorAll("#i-btns button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===iMode));
+  if(iSel>=0){const d=D.imp[iSel],after=D.basef1-d.perm;$("i-say").textContent=`Shuffling "${d.f}" takes test F1 from ${D.basef1.toFixed(3)} to ${after.toFixed(3)}. `+(d.perm<.003?"Almost no change: the forest has other columns carrying the same information.":"The model really does rely on this column.")}};
+document.querySelectorAll("#i-btns button").forEach(b=>b.onclick=()=>{iMode=b.dataset.m;drawers.importance()});
+
+/* ---------- 8 LIME ---------- */
+const bb=(x,y)=>1/(1+Math.exp(-9*(y-(.5+.28*Math.sin(5*x)))));
+const LOFF=(()=>{const g=gauss(rng(42));const a=[];for(let i=0;i<220;i++)a.push([g(),g()]);return a})();
+let lp=[.33,.62];
+function solve3(A,b){for(let i=0;i<3;i++){let p=i;for(let r=i+1;r<3;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];[b[i],b[p]]=[b[p],b[i]];
+  for(let r=i+1;r<3;r++){const f=A[r][i]/A[i][i];for(let c=i;c<3;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i]}}
+  const x=[0,0,0];for(let i=2;i>=0;i--){let s=b[i];for(let c=i+1;c<3;c++)s-=A[i][c]*x[c];x[i]=s/A[i][i]}return x}
+drawers.lime=function(){const w=+$("l-w").value,cv=$("l-cv"),g=cv.getContext("2d"),W=cv.width,H=cv.height,c0=css("--c0"),c1=css("--c1"),cs=8;
+  const X=v=>v*W,Y=v=>H-v*H;g.fillStyle=css("--panel");g.fillRect(0,0,W,H);
+  for(let px=0;px<W;px+=cs)for(let py=0;py<H;py+=cs){const p=bb((px+cs/2)/W,1-(py+cs/2)/H);g.fillStyle=hexA(p>.5?c1:c0,.1+.3*Math.abs(p-.5)*2);g.fillRect(px,py,cs,cs)}
+  const A=[[1e-6,0,0],[0,1e-6,0],[0,0,1e-6]],b=[0,0,0],pts=[];
+  LOFF.forEach(o=>{const x=lp[0]+o[0]*.22,y=lp[1]+o[1]*.22;if(x<0||x>1||y<0||y>1)return;const d2=(x-lp[0])**2+(y-lp[1])**2,wt=Math.exp(-d2/(w*w)),f=bb(x,y),v=[1,x-lp[0],y-lp[1]];
+    for(let i=0;i<3;i++){b[i]+=wt*v[i]*f;for(let j=0;j<3;j++)A[i][j]+=wt*v[i]*v[j]}pts.push([x,y,wt,f])});
+  const[c,wx,wy]=solve3(A,b);
+  pts.forEach(([x,y,wt,f])=>{g.beginPath();g.arc(X(x),Y(y),1.2+5.5*wt,0,7);g.fillStyle=hexA(f>.5?c1:c0,.25+.7*wt);g.fill()});
+  // local line: c + wx*dx + wy*dy = .5, clipped to a disc around the case
+  const nrm=Math.hypot(wx,wy)||1,off=(.5-c)/nrm,ux=wx/nrm,uy=wy/nrm,R=Math.max(.14,Math.min(.45,w*1.6));
+  if(Math.abs(off)<R){const hl=Math.sqrt(R*R-off*off),cx=lp[0]+ux*off,cy=lp[1]+uy*off;g.setLineDash([9,6]);g.lineWidth=3;g.strokeStyle=css("--ink");g.beginPath();g.moveTo(X(cx-uy*hl),Y(cy+ux*hl));g.lineTo(X(cx+uy*hl),Y(cy-ux*hl));g.stroke();g.setLineDash([])}
+  g.beginPath();g.arc(X(lp[0]),Y(lp[1]),8,0,7);g.fillStyle=css("--ink");g.fill();g.lineWidth=3;g.strokeStyle=css("--panel");g.stroke();
+  g.fillStyle=css("--muted");g.font="13px IBM Plex Mono, monospace";g.fillText("feature 1 →",W-110,H-10);g.save();g.translate(16,104);g.rotate(-Math.PI/2);g.fillText("feature 2 →",0,0);g.restore();
+  const m=Math.max(Math.abs(wx),Math.abs(wy),.5),bx=v=>170+v/m*110;let h=`<line class="ax" x1="170" x2="170" y1="8" y2="72"/>`;
+  [["feature 1",wx,16],["feature 2",wy,46]].forEach(([n,v,y])=>{h+=`<text x="6" y="${y+13}" class="t-ink">${n}</text><rect x="${Math.min(170,bx(v))}" y="${y}" width="${Math.max(Math.abs(bx(v)-170),1.5)}" height="18" fill="${v>=0?"var(--c1)":"var(--c0)"}"/>`});
+  h+=`<text x="170" y="90" text-anchor="middle">← class A   class B →</text>`;$("l-bars").innerHTML=h;$("l-wv").textContent=fmt(w);
+  const pr=bb(lp[0],lp[1]),dom=Math.abs(wx)>Math.abs(wy)*1.3?"feature 1 matters most here":Math.abs(wy)>Math.abs(wx)*1.3?"feature 2 matters most here":"both features matter about equally here";
+  $("l-say").textContent=`Black box says ${fmt(pr*100,0)}% class B for this case. Locally, ${dom}.`+(w>.35?" The neighbourhood is now so wide that the line is averaging over the whole curve.":"")};
+$("l-w").oninput=()=>drawers.lime();
+$("l-cv").onclick=e=>{const r=e.currentTarget.getBoundingClientRect();lp=[(e.clientX-r.left)/r.width,1-(e.clientY-r.top)/r.height];drawers.lime()};
+let rSel=0;
+function realDraw(){const d=D.lime[rSel],x0=400,X=v=>x0+v/.14*210;let h=`<line class="ax" x1="${x0}" x2="${x0}" y1="8" y2="222"/>`;
+  d.w.forEach(([f,v],i)=>{const y=14+i*35;h+=`<text x="12" y="${y+15}" class="t-ink">${f.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</text><rect x="${Math.min(x0,X(v))}" y="${y}" width="${Math.abs(X(v)-x0)}" height="22" rx="2" fill="${v>=0?"var(--c1)":"var(--c0)"}"/><text x="${v>=0?X(v)+6:X(v)-6}" y="${y+15}" text-anchor="${v>=0?"start":"end"}">${(v>0?"+":"")+v.toFixed(3)}</text>`});
+  h+=`<text x="${x0-8}" y="246" text-anchor="end">← towards benign</text><text x="${x0+8}" y="246">towards malignant →</text>`;
+  $("r-svg").innerHTML=h;$("r-p").textContent=d.p.toFixed(3);$("r-t").textContent=d.truth;$("r-say").textContent=d.say;
+  $("r-btns").innerHTML=D.lime.map((q,i)=>`<button data-i="${i}" aria-pressed="${i===rSel}">${q.name}</button>`).join("");
+  $("r-btns").querySelectorAll("button").forEach(b=>b.onclick=()=>{rSel=+b.dataset.i;realDraw()})}
+const limeBase=drawers.lime;drawers.lime=()=>{limeBase();realDraw()};
+
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",route);
+new MutationObserver(route).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+route();
+</script>
+
+</body></html>
